@@ -106,7 +106,7 @@ addr_t alloc_mem(uint32_t size, struct pcb_t * proc) {
 		int pre_frame = -1;
 		int index_seg;
 		int index_page;
-		
+	
 		int check_exist_seg = 0;
 		for (int i = 0; i< proc->seg_table->size ; i++) 
 		if (proc->seg_table->table[i].v_index == first_layer)
@@ -115,7 +115,6 @@ addr_t alloc_mem(uint32_t size, struct pcb_t * proc) {
 			check_exist_seg = 1;
 			break;
 		}
-
 		if (check_exist_seg == 0)
 		{
 			proc->seg_table->size ++;
@@ -214,10 +213,10 @@ int free_mem(addr_t address, struct pcb_t * proc)
 	uint32_t loc_frame = physical_add / PAGE_SIZE;
 	uint32_t pre_frame;
 	int num_pages =0;
-	int count = 0;
+	//int count = 0;
 	while (loc_frame!= -1)
 	{
-		first_layer = get_first_lv(num_pages * PAGE_SIZE + address);
+		int temp_first_layer = get_first_lv(num_pages * PAGE_SIZE + address);
 		second_layer = get_second_lv(num_pages * PAGE_SIZE + address);
 		
 
@@ -230,33 +229,45 @@ int free_mem(addr_t address, struct pcb_t * proc)
 		num_pages ++;
 		for (int i = pre_frame << OFFSET_LEN; i < ((pre_frame + 1) << OFFSET_LEN) - 1; i++) _ram[i] = 0;
 		
-		for (int i =0; i<proc->seg_table->size;i++)
-		if (proc->seg_table->table[i].v_index == first_layer)
+		int check = 0 ;
+		while (check == 0)
 		{
-			index_seg = i;
-			break;
-		}
-		int size_page = proc->seg_table->table[index_seg].pages->size;
-		
-		for (int i =0; i < size_page ; i++)
-		if (proc->seg_table->table[index_seg].pages->table[i].v_index == second_layer)
-		{
-			//printf("index: %d first: %d second : %d v_index: %d\n" , index_seg,first_layer , second_layer , proc->seg_table->table[index_seg].pages->table[i].v_index);
-			proc->seg_table->table[index_seg].pages->table[i].p_index = 
-			proc->seg_table->table[index_seg].pages->table[size_page-1].p_index;
-			proc->seg_table->table[index_seg].pages->table[i].v_index = 
-			proc->seg_table->table[index_seg].pages->table[size_page-1].v_index;
-			proc->seg_table->table[index_seg].pages->size --;
-			count ++;
-			if (proc->seg_table->table[index_seg].pages->size == 0)
+			if (temp_first_layer == first_layer)
 			{
-				int size_seg = proc->seg_table->size;
-				struct page_table_t *t = proc->seg_table->table[index_seg].pages;
-				proc->seg_table->table[index_seg].pages = proc->seg_table->table[size_seg - 1].pages;
-				proc->seg_table->table[index_seg].v_index = proc->seg_table->table[size_seg - 1].v_index;
-				proc->seg_table->size--;
-				free(t);
+				int size_page = proc->seg_table->table[index_seg].pages->size;
+				for (int i =0; i < size_page ; i++)
+				if (proc->seg_table->table[index_seg].pages->table[i].v_index == second_layer)
+				{
+					proc->seg_table->table[index_seg].pages->table[i].p_index = 
+					proc->seg_table->table[index_seg].pages->table[size_page-1].p_index;
+					proc->seg_table->table[index_seg].pages->table[i].v_index = 
+					proc->seg_table->table[index_seg].pages->table[size_page-1].v_index;
+					proc->seg_table->table[index_seg].pages->size --;
+					// count ++;
+					if (proc->seg_table->table[index_seg].pages->size == 0)
+					{
+						int size_seg = proc->seg_table->size;
+						struct page_table_t *t = proc->seg_table->table[index_seg].pages;
+						proc->seg_table->table[index_seg].pages = proc->seg_table->table[size_seg - 1].pages;
+						proc->seg_table->table[index_seg].v_index = proc->seg_table->table[size_seg - 1].v_index;
+						proc->seg_table->size--;
+						free(t);
+					}
+					break;
+				}
+				check = 1;
 			}
+			else
+			{
+				for (int i =0; i<proc->seg_table->size;i++)
+				if (proc->seg_table->table[i].v_index == temp_first_layer)
+				{
+					index_seg = i;
+					first_layer = temp_first_layer;
+					break;
+				}
+			}
+		
 		}
 	}
 	//printf("num pages :%d count :%d \n" , num_pages, count);
