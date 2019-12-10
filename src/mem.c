@@ -192,7 +192,7 @@ int free_mem(addr_t address, struct pcb_t * proc)
 	addr_t first_layer = get_first_lv(address);
 	addr_t second_layer = get_second_lv(address);
 	addr_t index_seg;
-	addr_t physical_add;
+	addr_t frame;
 	for (int i = 0; i < proc->seg_table->size; i++)
 	if (proc->seg_table->table[i].v_index == first_layer)
 	{
@@ -203,18 +203,17 @@ int free_mem(addr_t address, struct pcb_t * proc)
 	for (int i = 0; i < proc->seg_table->table[index_seg].pages->size; i++)
 	if (proc->seg_table->table[index_seg].pages->table[i].v_index == second_layer)
 	{
-		physical_add = proc->seg_table->table[index_seg].pages->table[i].p_index << OFFSET_LEN;
+		frame = proc->seg_table->table[index_seg].pages->table[i].p_index;
 		break;
 	}
 
-	uint32_t loc_frame = physical_add / PAGE_SIZE;
+	uint32_t loc_frame = frame;
 	uint32_t pre_frame;
 	int num_pages =0;
 	while (loc_frame!= -1)
 	{
 		int temp_first_layer = get_first_lv(num_pages * PAGE_SIZE + address);
 		second_layer = get_second_lv(num_pages * PAGE_SIZE + address);
-		physical_add = loc_frame * PAGE_SIZE;
 		
 		_mem_stat[loc_frame].proc = 0;
 		_mem_stat[loc_frame].index = -1;
