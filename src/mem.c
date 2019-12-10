@@ -76,7 +76,7 @@ static int translate(
 	int i;
 	for (i = 0; i < page_table->size; i++) {
 		if (page_table->table[i].v_index == second_lv) {
-			*physical_addr  = page_table->table[i].p_index + offset;
+			*physical_addr  = (page_table->table[i].p_index << OFFSET_LEN)+ offset;
 			return 1;
 		}
 	}
@@ -137,17 +137,17 @@ addr_t alloc_mem(uint32_t size, struct pcb_t * proc) {
 
 			int temp_first_layer = get_first_lv(ret_mem + count * PAGE_SIZE);
 			int check = 0;
-			while (check ==0){
+			while (check == 0){
 				if (temp_first_layer == first_layer)
 				{
 					proc->seg_table->table[index_seg].pages->size++;
 					index_page = proc->seg_table->table[index_seg].pages->size - 1;
 
 					addr_t second_layer = get_second_lv(ret_mem + count * PAGE_SIZE);
-					addr_t phy_add = loc_frame * PAGE_SIZE;
+					addr_t frame = loc_frame ;
 					
 					proc->seg_table->table[index_seg].pages->table[index_page].v_index = second_layer;
-					proc->seg_table->table[index_seg].pages->table[index_page].p_index = phy_add;
+					proc->seg_table->table[index_seg].pages->table[index_page].p_index = frame;
 					check =1;
 				}
 				else if (temp_first_layer != first_layer)
@@ -163,14 +163,15 @@ addr_t alloc_mem(uint32_t size, struct pcb_t * proc) {
 			count ++;
 		}
 	}
-	// printf("_________ALLOCATE___________\n");
+	// printf("_________ALLOCATE___________ num pages: %d , pid: :%d\n" ,num_pages , proc->pid);
+	// printf("   Break point: %d", proc->bp>>10);
 	// printf("	Pages used in memory: \n");
 	// printf("	");
 	// for (int i =0 ; i<NUM_PAGES; i++)
 	// if (_mem_stat[i].proc!=0) printf("%d  ",i);
 	
 	// printf("\n");
-	// printf("	Segments used in virtual: \n");
+	// printf("\n\tSegments used in virtual: \n");
 	// for (int i = 0; i<proc->seg_table->size; i++) 
 	// {
 	// 	printf("	+ Seg: %d\n", i);
@@ -202,7 +203,7 @@ int free_mem(addr_t address, struct pcb_t * proc)
 	for (int i = 0; i < proc->seg_table->table[index_seg].pages->size; i++)
 	if (proc->seg_table->table[index_seg].pages->table[i].v_index == second_layer)
 	{
-		physical_add = proc->seg_table->table[index_seg].pages->table[i].p_index;
+		physical_add = proc->seg_table->table[index_seg].pages->table[i].p_index << OFFSET_LEN;
 		break;
 	}
 
@@ -213,9 +214,8 @@ int free_mem(addr_t address, struct pcb_t * proc)
 	{
 		int temp_first_layer = get_first_lv(num_pages * PAGE_SIZE + address);
 		second_layer = get_second_lv(num_pages * PAGE_SIZE + address);
-		
-
 		physical_add = loc_frame * PAGE_SIZE;
+		
 		_mem_stat[loc_frame].proc = 0;
 		_mem_stat[loc_frame].index = -1;
 		pre_frame = loc_frame;
@@ -267,20 +267,21 @@ int free_mem(addr_t address, struct pcb_t * proc)
 	if (proc->bp == address + num_pages * PAGE_SIZE)
 	proc->bp = proc->bp - num_pages * PAGE_SIZE;
 
-	// printf("_________FREE___________\n");
+	// printf("_________FREE___________ num pages: %d , pid: %d\n" , num_pages , proc->pid);
+	// printf("   Break point: %d", proc->bp>>10);
 	// printf("	Pages used in memory: \n");
 	// printf("	");
 	// for (int i =0 ; i<NUM_PAGES; i++)
 	// if (_mem_stat[i].proc!=0) printf("%d  ",i);
 	
 	// printf("\n");
-	// printf("	Segments used in virtual: \n");
+	// printf("\n\tSegments used in virtual: \n");
 	// for (int i = 0; i<proc->seg_table->size; i++) 
 	// {
 	// 	printf("	+ Seg: %d\n", i);
 	// 	printf("		Pages: ");
 	// 	for (int j = 0; j<proc->seg_table->table[i].pages->size ; j++)
-	// 	printf("%d  ", j);
+	// 	printf("%d(%d:%d)  ", j,proc->seg_table->table[i].pages->table[j].v_index,proc->seg_table->table[i].pages->table[j].p_index);
 	// 	printf("\n\n");
 	// }
 

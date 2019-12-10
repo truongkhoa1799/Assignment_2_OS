@@ -1,9 +1,9 @@
 1 8
 alloc 13535 0
 alloc 1568 1
-alloc 14336 2
-free 1
-alloc 6000 4
+free 0
+alloc 1386 2
+alloc 4564 4
 free 2
 free 4
-free 0
+free 1
