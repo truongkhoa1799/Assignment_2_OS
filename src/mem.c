@@ -76,22 +76,22 @@ static int translate(
 	int i;
 	for (i = 0; i < page_table->size; i++) {
 		if (page_table->table[i].v_index == second_lv) {
-			*physical_addr  = (page_table->table[i].p_index << OFFSET_LEN)+ offset;
+			*physical_addr  = (page_table->table[i].p_index << OFFSET_LEN) + offset;
 			return 1;
 		}
 	}
-	return 1;
+	return 0;
 }
 
 addr_t alloc_mem(uint32_t size, struct pcb_t * proc) {
 	pthread_mutex_lock(&mem_lock);
 	addr_t ret_mem = 0;
-	uint32_t num_pages = (size % PAGE_SIZE) ? size / PAGE_SIZE +1 : size / PAGE_SIZE ; 
+	uint32_t num_pages = (size % PAGE_SIZE != 0) ? size / PAGE_SIZE +1 : size / PAGE_SIZE ; 
 	int mem_avail = 0; 
-	int free_pages = 0;
-	for (int i =0; i<PAGE_SIZE ; i++) if (_mem_stat[i].proc == 0) free_pages++;	 
+	int free_frames = 0;
+	for (int i =0; i<PAGE_SIZE ; i++) if (_mem_stat[i].proc == 0) free_frames++;	 
 	
-	if (proc->bp + size <= RAM_SIZE && free_pages >= num_pages) mem_avail=1;
+	if (proc->bp + size <= RAM_SIZE && free_frames >= num_pages) mem_avail=1;
 
 	if (mem_avail) 
 	{
@@ -124,11 +124,11 @@ addr_t alloc_mem(uint32_t size, struct pcb_t * proc) {
 		while (count < num_pages)
 		{
 			for (int k = 0; k < NUM_PAGES; k++)
-			if (_mem_stat[k].proc == 0)
-			{
-				loc_frame = k;
-				break;
-			}
+				if (_mem_stat[k].proc == 0)
+				{
+					loc_frame = k;
+					break;
+				}
 			_mem_stat[loc_frame].proc = proc->pid;
 			_mem_stat[loc_frame].index = count;
 			_mem_stat[loc_frame].next = -1;
@@ -201,11 +201,11 @@ int free_mem(addr_t address, struct pcb_t * proc)
 	}
 
 	for (int i = 0; i < proc->seg_table->table[index_seg].pages->size; i++)
-	if (proc->seg_table->table[index_seg].pages->table[i].v_index == second_layer)
-	{
-		frame = proc->seg_table->table[index_seg].pages->table[i].p_index;
-		break;
-	}
+		if (proc->seg_table->table[index_seg].pages->table[i].v_index == second_layer)
+		{
+			frame = proc->seg_table->table[index_seg].pages->table[i].p_index;
+			break;
+		}
 
 	uint32_t loc_frame = frame;
 	uint32_t pre_frame;
