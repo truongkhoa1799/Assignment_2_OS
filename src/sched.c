@@ -36,16 +36,12 @@ struct pcb_t * get_proc(void) {
 	 * */
 	if (empty(&ready_queue) && !empty(&run_queue))
 	{
-		for (int i =0; i<MAX_QUEUE_SIZE; i++)
+		int run_size = run_queue.size;
+		for (int i =0; i < run_size; i++)
 		{
-			if (run_queue.proc[i]!=NULL && !empty(&run_queue))
-			{
-				//struct pcb_t *temp = deep_copy(run_queue.proc[i]);
-				//enqueue(&ready_queue , temp);
-				enqueue(&ready_queue , run_queue.proc[i]);
-				run_queue.size--;
-				run_queue.proc[i] = NULL;
-			}
+			enqueue(&ready_queue , run_queue.proc[i]);
+			run_queue.size--;
+			run_queue.proc[i] = NULL;
 		}
 	}
 	proc = dequeue(&ready_queue);
