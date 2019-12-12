@@ -5,6 +5,11 @@
 #include <pthread.h>
 #include <stdio.h>
 
+#define LOG_ALLOC(x) //x
+#define LOG_FREE(x) //x
+
+
+
 static BYTE _ram[RAM_SIZE];
 
 static struct {
@@ -18,6 +23,7 @@ static struct {
 static pthread_mutex_t mem_lock;
 
 void init_mem(void) {
+	
 	memset(_mem_stat, 0, sizeof(*_mem_stat) * NUM_PAGES);
 	for (int i =0 ;i<NUM_PAGES; i++)
 	{
@@ -163,23 +169,22 @@ addr_t alloc_mem(uint32_t size, struct pcb_t * proc) {
 			count ++;
 		}
 	}
-	// printf("_________ALLOCATE___________ num pages: %d , pid: :%d\n" ,num_pages , proc->pid);
-	// printf("   Break point: %d", proc->bp>>10);
-	// printf("	Pages used in memory: \n");
-	// printf("	");
-	// for (int i =0 ; i<NUM_PAGES; i++)
-	// if (_mem_stat[i].proc!=0) printf("%d  ",i);
-	
-	// printf("\n");
-	// printf("\n\tSegments used in virtual: \n");
-	// for (int i = 0; i<proc->seg_table->size; i++) 
-	// {
-	// 	printf("	+ Seg: %d\n", i);
-	// 	printf("		Pages: ");
-	// 	for (int j = 0; j<proc->seg_table->table[i].pages->size ; j++)
-	// 	printf("%d  ", j);
-	// 	printf("\n\n");
-	// }
+	LOG_ALLOC(
+		printf("_________ALLOC___________ num pages alloc: %d , pid: %d\n" , num_pages , proc->pid);
+		printf("\tFrames used in memory: \n\t");
+		for (int i =0 ; i<NUM_PAGES; i++)
+		if (_mem_stat[i].proc!=0) printf("%d  ",i);
+		
+		printf("\n");
+		printf("\n\tSegments used in virtual: \n");
+		for (int i = 0; i<proc->seg_table->size; i++) 
+		{
+			printf("\tSeg: %d\n", i);
+			printf("\t\tPages: ");
+			for (int j = 0; j<proc->seg_table->table[i].pages->size ; j++) printf("%d ", j);
+			printf("\n\n");
+		}
+	);
 	
 	pthread_mutex_unlock(&mem_lock);
 	return ret_mem;
@@ -192,7 +197,7 @@ int free_mem(addr_t address, struct pcb_t * proc)
 	addr_t first_layer = get_first_lv(address);
 	addr_t second_layer = get_second_lv(address);
 	addr_t index_seg;
-	addr_t frame;
+	addr_t frame = -1;
 	for (int i = 0; i < proc->seg_table->size; i++)
 	if (proc->seg_table->table[i].v_index == first_layer)
 	{
@@ -214,7 +219,7 @@ int free_mem(addr_t address, struct pcb_t * proc)
 	{
 		int temp_first_layer = get_first_lv(num_pages * PAGE_SIZE + address);
 		second_layer = get_second_lv(num_pages * PAGE_SIZE + address);
-		
+		//printf("%d \n" , frame);
 		_mem_stat[loc_frame].proc = 0;
 		_mem_stat[loc_frame].index = -1;
 		pre_frame = loc_frame;
@@ -266,24 +271,24 @@ int free_mem(addr_t address, struct pcb_t * proc)
 	if (proc->bp == address + num_pages * PAGE_SIZE)
 	proc->bp = proc->bp - num_pages * PAGE_SIZE;
 
-	// printf("_________FREE___________ num pages: %d , pid: %d\n" , num_pages , proc->pid);
-	// printf("   Break point: %d", proc->bp>>10);
-	// printf("	Pages used in memory: \n");
-	// printf("	");
-	// for (int i =0 ; i<NUM_PAGES; i++)
-	// if (_mem_stat[i].proc!=0) printf("%d  ",i);
+	LOG_FREE(
+		printf("_________FREE___________ num pages free: %d , pid: %d\n" , num_pages , proc->pid);
+		printf("\tFrames used in memory: \n\t");
+		for (int i =0 ; i<NUM_PAGES; i++)
+		if (_mem_stat[i].proc!=0) printf("%d  ",i);
+		
+		printf("\n");
+		printf("\n\tSegments used in virtual: \n");
+		for (int i = 0; i<proc->seg_table->size; i++) 
+		{
+			printf("\tSeg: %d\n", i);
+			printf("\t\tPages: ");
+			for (int j = 0; j<proc->seg_table->table[i].pages->size ; j++) printf("%d ", j);
+			printf("\n\n");
+		}
+	);
 	
-	// printf("\n");
-	// printf("\n\tSegments used in virtual: \n");
-	// for (int i = 0; i<proc->seg_table->size; i++) 
-	// {
-	// 	printf("	+ Seg: %d\n", i);
-	// 	printf("		Pages: ");
-	// 	for (int j = 0; j<proc->seg_table->table[i].pages->size ; j++)
-	// 	printf("%d(%d:%d)  ", j,proc->seg_table->table[i].pages->table[j].v_index,proc->seg_table->table[i].pages->table[j].p_index);
-	// 	printf("\n\n");
-	// }
-
+	
 	pthread_mutex_unlock(&mem_lock);
 	return 0;
 }

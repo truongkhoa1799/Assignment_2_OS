@@ -42,6 +42,7 @@ static void * cpu_routine(void * args) {
 		}else if (proc->pc == proc->code->size) {
 			/* The porcess has finish it job */
 			printf("\tCPU %d: Processed %2d has finished\n", id ,proc->pid);
+			//for (int i = 0; i < 10; i++) if (proc->regs[i] !=0) free_mem(proc->regs[i] , proc);
 			free(proc);
 			proc = get_proc();
 			time_left = 0;

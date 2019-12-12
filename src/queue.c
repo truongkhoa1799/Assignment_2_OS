@@ -25,20 +25,20 @@ struct pcb_t * dequeue(struct queue_t * q) {
 	 * */
 	if (!empty(q))
 	{
-		int index;
-		int max_pri = 0;
+		int index = 0;
+		int max_pri = q->proc[0]->priority;
 		for (int i = 0; i<q->size ; i++)
-		if (q->proc[i]->priority > max_pri)
-		{
-			index = i;
-			max_pri = q->proc[i]->priority;
-		}
+			if (q->proc[i]->priority > max_pri)
+			{
+				index = i;
+				max_pri = q->proc[i]->priority;
+			}
 
 		struct pcb_t *temp = q->proc[index];
-		q->proc[index] = q->proc[q->size-1];
-		q->proc[q->size - 1] = NULL;
+		for (int i = index; i < q->size-1; i++) 
+			q->proc[i] = q->proc[i+1];
 		q->size--;
-		return temp;
+	    return temp;
 	}
 	return NULL;
 }

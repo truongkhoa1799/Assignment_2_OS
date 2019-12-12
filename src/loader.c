@@ -32,6 +32,11 @@ static enum ins_opcode_t get_opcode(char * opt) {
 struct pcb_t * load(const char * path) {
 	/* Create new PCB for the new process */
 	struct pcb_t * proc = (struct pcb_t * )malloc(sizeof(struct pcb_t));
+	// for (int i =0; i<10; i++) 
+	// {
+	// 	proc->regs[i] = malloc(sizeof(addr_t));
+	// 	proc->regs[i] = 0;
+	// }
 	proc->pid = avail_pid;
 	avail_pid++;
 	proc->seg_table =

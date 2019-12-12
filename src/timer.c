@@ -60,12 +60,15 @@ static void * timer_routine(void * args) {
 	}
 	pthread_exit(args);
 }
-
+/*event_lock : event lock and timer waiting for event nha lock
+ * timer_lock : timer lock and event doi cho timer lock de lam tiep */
 void next_slot(struct timer_id_t * timer_id) {
 	/* Tell to timer that we have done our job in current slot */
 	/*we lock the timer in order to protect the timer_id->done
 	 *from the timer routine. Because the timer_routine also access
 	 *into this page*/ 
+
+	/*event lock de thay doi bien done, xong roi signal cho timer biet roi nha lock*/
 	pthread_mutex_lock(&timer_id->event_lock);
 	timer_id->done = 1;
 	pthread_cond_signal(&timer_id->event_cond);
